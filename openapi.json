@@ -1,0 +1,398 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hattori Work Agent API",
+    "description": "Backend API for Hattori Work Agent - handles chat interactions via HTTP.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Hattori Work Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.hattori.work",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "chat",
+      "description": "Chat message operations"
+    },
+    {
+      "name": "health",
+      "description": "Health check endpoints"
+    }
+  ],
+  "paths": {
+    "/api/chats/{user_id}/messages": {
+      "post": {
+        "summary": "Send a new user message",
+        "description": "Creates and queues a new message from the user. The message will be processed asynchronously by the agent, and responses will be delivered via WebSocket.",
+        "tags": ["chat"],
+        "operationId": "sendUserMessage",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "description": "Unique identifier for the user",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "example": "user123"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMessageRequest"
+              },
+              "example": {
+                "message": "Hello, how can you help me today?"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message successfully created and queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMessageResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Message queued successfully",
+                  "message_id": "msg_123abc"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Message is required and cannot be empty"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Failed to queue message: internal error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List all messages for a user",
+        "description": "Retrieves the complete message history for the specified user, including both user and assistant messages in chronological order.",
+        "tags": ["chat"],
+        "operationId": "listUserMessages",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "description": "Unique identifier for the user",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "example": "user123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageListResponse"
+                },
+                "example": {
+                  "user_id": "user123",
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": "Hello, how can you help me?",
+                      "message_id": "msg_001",
+                      "seq_num": 0,
+                      "created_at_epoch": 1705228445
+                    },
+                    {
+                      "role": "assistant",
+                      "content": "I'm here to help you with your questions.",
+                      "message_id": "msg_002",
+                      "seq_num": 1,
+                      "created_at_epoch": 1705228446
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found or no messages exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "User not found or has no messages"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Failed to retrieve messages"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns the health status of the API",
+        "tags": ["health"],
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "healthy",
+                  "service": "hattori-work-agent",
+                  "timestamp": "2024-01-15T10:30:00Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root endpoint",
+        "description": "Returns API information",
+        "tags": ["health"],
+        "operationId": "root",
+        "responses": {
+          "200": {
+            "description": "API information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RootResponse"
+                },
+                "example": {
+                  "message": "Hattori Work Agent API",
+                  "status": "running"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateMessageRequest": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The message content from the user",
+            "minLength": 1,
+            "maxLength": 10000,
+            "example": "What are the capabilities of AI assistants?"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateMessageResponse": {
+        "type": "object",
+        "required": ["success", "message"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the message was successfully queued",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message",
+            "example": "Message queued successfully"
+          },
+          "message_id": {
+            "type": "string",
+            "description": "Unique identifier for the queued message (optional)",
+            "example": "msg_abc123"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "service"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "unhealthy"],
+            "description": "Health status of the service"
+          },
+          "service": {
+            "type": "string",
+            "description": "Name of the service"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the health check"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RootResponse": {
+        "type": "object",
+        "required": ["message", "status"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "API name"
+          },
+          "status": {
+            "type": "string",
+            "description": "API status"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MessageListResponse": {
+        "type": "object",
+        "required": ["user_id", "messages"],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "The user identifier",
+            "example": "user123"
+          },
+          "messages": {
+            "type": "array",
+            "description": "List of messages in chronological order",
+            "items": {
+              "$ref": "#/components/schemas/EnhancedChatMessage"
+            },
+            "example": [
+              {
+                "role": "user",
+                "content": "Hello, how can you help me?",
+                "message_id": "msg_001",
+                "seq_num": 0,
+                "created_at_epoch": 1705228445
+              },
+              {
+                "role": "assistant",
+                "content": "I'm here to help you with your questions.",
+                "message_id": "msg_002",
+                "seq_num": 1,
+                "created_at_epoch": 1705228446
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "EnhancedChatMessage": {
+        "type": "object",
+        "required": ["role", "content", "message_id", "seq_num", "created_at_epoch"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["user", "assistant"],
+            "description": "Role of the message sender",
+            "example": "user"
+          },
+          "content": {
+            "type": "string",
+            "description": "The message content",
+            "minLength": 1,
+            "example": "Hello, how can you help me?"
+          },
+          "message_id": {
+            "type": "string",
+            "description": "Unique identifier for the message",
+            "example": "msg_001"
+          },
+          "seq_num": {
+            "type": "integer",
+            "description": "Sequence number of the message in the conversation",
+            "minimum": 0,
+            "example": 0
+          },
+          "created_at_epoch": {
+            "type": "integer",
+            "description": "Unix timestamp in seconds when the message was created",
+            "minimum": 0,
+            "example": 1705228445
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["detail"],
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
+

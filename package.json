@@ -1,0 +1,17 @@
+{
+  "name": "hattori-work-docs",
+  "version": "1.0.0",
+  "description": "API documentation for Hattori Work",
+  "scripts": {
+    "validate:openapi": "swagger-cli validate openapi.json",
+    "validate:asyncapi": "asyncapi lint asyncapi.json",
+    "validate:all": "npm run validate:openapi && npm run validate:asyncapi"
+  },
+  "keywords": [
+    "openapi",
+    "asyncapi",
+    "api-documentation"
+  ],
+  "license": "MIT"
+}
+

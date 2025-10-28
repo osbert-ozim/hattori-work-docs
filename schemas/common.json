@@ -1,0 +1,66 @@
+{
+  "UserId": {
+    "type": "string",
+    "pattern": "^[a-zA-Z0-9_-]+$",
+    "minLength": 1,
+    "maxLength": 255,
+    "description": "Unique identifier for a user",
+    "example": "user123"
+  },
+  "MessageId": {
+    "type": "string",
+    "pattern": "^msg_[a-zA-Z0-9_-]+$",
+    "minLength": 4,
+    "maxLength": 100,
+    "description": "Unique identifier for a message",
+    "example": "msg_abc123"
+  },
+  "Timestamp": {
+    "type": "string",
+    "format": "date-time",
+    "description": "ISO 8601 timestamp",
+    "example": "2024-01-15T10:30:45.123Z"
+  },
+  "EpochTimestamp": {
+    "type": "integer",
+    "description": "Unix timestamp in seconds",
+    "minimum": 0,
+    "example": 1705228445
+  },
+  "SuccessResponse": {
+    "type": "object",
+    "required": ["success", "message"],
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "description": "Whether the operation was successful"
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable status message"
+      }
+    },
+    "additionalProperties": false
+  },
+  "ErrorDetail": {
+    "type": "object",
+    "required": ["detail"],
+    "properties": {
+      "detail": {
+        "type": "string",
+        "description": "Error message"
+      },
+      "error_code": {
+        "type": "string",
+        "description": "Machine-readable error code"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Timestamp when the error occurred"
+      }
+    },
+    "additionalProperties": true
+  }
+}
+

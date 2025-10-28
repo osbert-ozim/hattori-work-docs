@@ -1,0 +1,257 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Hattori Work Agent WebSocket API",
+    "description": "WebSocket API for real-time notifications from the Hattori Work Agent.\n\n**Usage Flow:**\n1. Client sends a message via `POST /api/chats/{user_id}/messages`\n2. Client connects to `WS /ws/chats/{user_id}` to receive notifications\n3. Server sends assistant responses via WebSocket as they're generated\n\nThe WebSocket connection provides real-time notifications about:\n- Assistant message responses\n- Error notifications\n- Connection status updates",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Hattori Work Team"
+    }
+  },
+  "servers": {
+    "development": {
+      "url": "ws://localhost:8081",
+      "protocol": "ws",
+      "description": "Development WebSocket server"
+    },
+    "production": {
+      "url": "wss://api.hattori.work",
+      "protocol": "wss",
+      "description": "Production WebSocket server"
+    }
+  },
+  "channels": {
+    "/ws/chats/{user_id}": {
+      "parameters": {
+        "user_id": {
+          "$ref": "#/components/parameters/UserId"
+        }
+      },
+      "subscribe": {
+        "summary": "Receive notifications for a user",
+        "description": "Subscribe to receive real-time notifications from the Hattori Work Agent.\n\nThe WebSocket will deliver notifications including:\n- **Assistant responses**: Generated responses to user messages\n- **Error messages**: Notifications when processing fails\n- **Connection status**: Updates about the WebSocket connection state\n\n**Important**: Messages should be sent via HTTP `POST /api/chats/{user_id}/messages`.\nThis WebSocket is for receiving notifications only.",
+        "operationId": "subscribeToChatNotifications",
+        "message": {
+          "oneOf": [
+            {
+              "$ref": "#/components/messages/AssistantResponse"
+            },
+            {
+              "$ref": "#/components/messages/ErrorMessage"
+            },
+            {
+              "$ref": "#/components/messages/ConnectionStatus"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserId": {
+        "description": "Unique identifier for the user",
+        "schema": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "minLength": 1,
+          "maxLength": 255,
+          "example": "user123"
+        }
+      }
+    },
+    "messages": {
+      "AssistantResponse": {
+        "name": "AssistantResponse",
+        "title": "Assistant Chat Response",
+        "summary": "Response from the AI assistant",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "#/components/schemas/AssistantMessage"
+        },
+        "examples": [
+          {
+            "payload": {
+              "messageType": "assistant_response",
+              "content": "I can help you with a variety of tasks...",
+              "timestamp": "2024-01-15T10:30:45.123Z",
+              "messageId": "msg_response_123"
+            }
+          }
+        ]
+      },
+      "ErrorMessage": {
+        "name": "ErrorMessage",
+        "title": "Error Message",
+        "summary": "Error notification",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "#/components/schemas/ErrorMessagePayload"
+        },
+        "examples": [
+          {
+            "payload": {
+              "messageType": "error",
+              "error": "Processing failed",
+              "details": "Timeout while generating response",
+              "timestamp": "2024-01-15T10:30:45.123Z"
+            }
+          }
+        ]
+      },
+      "ConnectionStatus": {
+        "name": "ConnectionStatus",
+        "title": "Connection Status Update",
+        "summary": "Status updates about the WebSocket connection",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "#/components/schemas/ConnectionStatusPayload"
+        },
+        "examples": [
+          {
+            "payload": {
+              "messageType": "connection_status",
+              "status": "connected",
+              "timestamp": "2024-01-15T10:30:45.123Z"
+            }
+          }
+        ]
+      },
+      "UserMessage": {
+        "name": "UserMessage",
+        "title": "User Message (Publish)",
+        "summary": "Optional - for sending messages via WebSocket",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "#/components/schemas/UserMessagePayload"
+        },
+        "examples": [
+          {
+            "payload": {
+              "messageType": "user_message",
+              "content": "Hello, assistant!"
+            }
+          }
+        ]
+      }
+    },
+    "schemas": {
+      "AssistantMessage": {
+        "type": "object",
+        "required": ["messageType", "content", "timestamp"],
+        "properties": {
+          "messageType": {
+            "type": "string",
+            "enum": ["assistant_response"],
+            "description": "Type of message"
+          },
+          "content": {
+            "type": "string",
+            "description": "The assistant's response content",
+            "example": "I can help you with various tasks including answering questions..."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when the message was created",
+            "example": "2024-01-15T10:30:45.123Z"
+          },
+          "messageId": {
+            "type": "string",
+            "description": "Unique identifier for this message",
+            "example": "msg_response_123"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata about the message",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["assistant"],
+                "example": "assistant"
+              },
+              "model": {
+                "type": "string",
+                "description": "The model used to generate this response",
+                "example": "gpt-4o-mini"
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ErrorMessagePayload": {
+        "type": "object",
+        "required": ["messageType", "error", "timestamp"],
+        "properties": {
+          "messageType": {
+            "type": "string",
+            "enum": ["error"],
+            "description": "Type of message"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Processing failed"
+          },
+          "details": {
+            "type": "string",
+            "description": "Additional error details",
+            "example": "Timeout while generating response"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp",
+            "example": "2024-01-15T10:30:45.123Z"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConnectionStatusPayload": {
+        "type": "object",
+        "required": ["messageType", "status", "timestamp"],
+        "properties": {
+          "messageType": {
+            "type": "string",
+            "enum": ["connection_status"],
+            "description": "Type of message"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["connected", "disconnected", "reconnected"],
+            "description": "Connection status",
+            "example": "connected"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp",
+            "example": "2024-01-15T10:30:45.123Z"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserMessagePayload": {
+        "type": "object",
+        "required": ["messageType", "content"],
+        "properties": {
+          "messageType": {
+            "type": "string",
+            "enum": ["user_message"],
+            "description": "Type of message"
+          },
+          "content": {
+            "type": "string",
+            "description": "The user's message content",
+            "minLength": 1,
+            "maxLength": 10000,
+            "example": "Hello, how can you help me?"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
+

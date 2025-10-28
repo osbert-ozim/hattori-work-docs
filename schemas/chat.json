@@ -1,0 +1,44 @@
+{
+  "ConversationState": {
+    "type": "object",
+    "required": ["user_id", "active", "message_count"],
+    "properties": {
+      "user_id": {
+        "$ref": "#/UserId"
+      },
+      "active": {
+        "type": "boolean",
+        "description": "Whether the conversation is active"
+      },
+      "message_count": {
+        "type": "integer",
+        "description": "Total number of messages in the conversation",
+        "minimum": 0
+      },
+      "last_activity": {
+        "$ref": "#/EpochTimestamp"
+      }
+    },
+    "additionalProperties": false
+  },
+  "MessageQueueStatus": {
+    "type": "object",
+    "required": ["user_id", "queue_length"],
+    "properties": {
+      "user_id": {
+        "$ref": "#/UserId"
+      },
+      "queue_length": {
+        "type": "integer",
+        "description": "Number of messages in queue for this user",
+        "minimum": 0
+      },
+      "processing": {
+        "type": "boolean",
+        "description": "Whether a message is currently being processed"
+      }
+    },
+    "additionalProperties": false
+  }
+}
+
