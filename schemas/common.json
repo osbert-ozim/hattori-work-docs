@@ -9,11 +9,9 @@
   },
   "MessageId": {
     "type": "string",
-    "pattern": "^msg_[a-zA-Z0-9_-]+$",
-    "minLength": 4,
-    "maxLength": 100,
-    "description": "Unique identifier for a message",
-    "example": "msg_abc123"
+    "format": "uuid",
+    "description": "Unique identifier for a message (UUID format)",
+    "example": "123e4567-e89b-12d3-a456-426614174000"
   },
   "Timestamp": {
     "type": "string",

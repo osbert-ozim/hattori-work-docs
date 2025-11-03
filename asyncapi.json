@@ -29,12 +29,15 @@
       },
       "subscribe": {
         "summary": "Receive notifications for a user",
-        "description": "Subscribe to receive real-time notifications from the Hattori Work Agent.\n\nThe WebSocket will deliver notifications including:\n- **Assistant responses**: Generated responses to user messages\n- **Error messages**: Notifications when processing fails\n- **Connection status**: Updates about the WebSocket connection state\n\n**Important**: Messages should be sent via HTTP `POST /api/chats/{user_id}/messages`.\nThis WebSocket is for receiving notifications only.",
+        "description": "Subscribe to receive real-time notifications from the Hattori Work Agent.\n\nThe WebSocket will deliver notifications including:\n- **Assistant responses**: Generated responses to user messages\n- **Assistant status**: Progress updates during message processing\n- **Error messages**: Notifications when processing fails\n- **Connection status**: Updates about the WebSocket connection state\n\n**Important**: Messages should be sent via HTTP `POST /api/chats/{user_id}/messages`.\nThis WebSocket is for receiving notifications only.",
         "operationId": "subscribeToChatNotifications",
         "message": {
           "oneOf": [
             {
               "$ref": "#/components/messages/AssistantResponse"
+            },
+            {
+              "$ref": "#/components/messages/AssistantStatus"
             },
             {
               "$ref": "#/components/messages/ErrorMessage"
@@ -64,7 +67,7 @@
       "AssistantResponse": {
         "name": "AssistantResponse",
         "title": "Assistant Chat Response",
-        "summary": "Response from the AI assistant",
+        "summary": "Final response from the AI assistant",
         "contentType": "application/json",
         "payload": {
           "$ref": "#/components/schemas/AssistantMessage"
@@ -75,7 +78,25 @@
               "messageType": "assistant_response",
               "content": "I can help you with a variety of tasks...",
               "timestamp": "2024-01-15T10:30:45.123Z",
-              "messageId": "msg_response_123"
+              "messageId": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          }
+        ]
+      },
+      "AssistantStatus": {
+        "name": "AssistantStatus",
+        "title": "Assistant Status Update",
+        "summary": "Progress update from the AI assistant during processing",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "#/components/schemas/AssistantMessage"
+        },
+        "examples": [
+          {
+            "payload": {
+              "messageType": "assistant_status",
+              "content": "🔍 Processing your JIRA request...",
+              "timestamp": "2024-01-15T10:30:45.123Z"
             }
           }
         ]
@@ -142,12 +163,12 @@
         "properties": {
           "messageType": {
             "type": "string",
-            "enum": ["assistant_response"],
-            "description": "Type of message"
+            "enum": ["assistant_response", "assistant_status"],
+            "description": "Type of message - 'assistant_response' for final responses, 'assistant_status' for progress updates"
           },
           "content": {
             "type": "string",
-            "description": "The assistant's response content",
+            "description": "The assistant's response or status content",
             "example": "I can help you with various tasks including answering questions..."
           },
           "timestamp": {
@@ -158,27 +179,12 @@
           },
           "messageId": {
             "type": "string",
-            "description": "Unique identifier for this message",
-            "example": "msg_response_123"
-          },
-          "metadata": {
-            "type": "object",
-            "description": "Additional metadata about the message",
-            "properties": {
-              "role": {
-                "type": "string",
-                "enum": ["assistant"],
-                "example": "assistant"
-              },
-              "model": {
-                "type": "string",
-                "description": "The model used to generate this response",
-                "example": "gpt-4o-mini"
-              }
-            }
+            "format": "uuid",
+            "description": "Unique identifier for this message (UUID format). Only present for 'assistant_response' messages, not for 'assistant_status' updates.",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       },
       "ErrorMessagePayload": {
         "type": "object",
